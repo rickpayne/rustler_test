@@ -1,27 +1,30 @@
-use rustler::{Env, Term, NifResult};
-use rustler::Atom;
-use std::io::Write;
+use rustler::{Atom, Term};
 use std::cmp::Ordering;
-
-pub fn term_debug<'a>(_env: Env<'a>, args: &[Term<'a>]) -> NifResult<String> {
-    let mut bytes: Vec<u8> = Vec::new();
-    write!(&mut bytes, "{:?}", args[0]).expect("debug formatting should succeed");
-    Ok(String::from_utf8_lossy(&bytes).to_string())
-}
+use std::io::Write;
 
 mod atoms {
-    rustler::rustler_atoms! {
-        atom equal;
-        atom less;
-        atom greater;
+    rustler::atoms! {
+        equal,
+        less,
+        greater,
     }
 }
 
-pub fn term_eq<'a>(_env: Env<'a>, args: &[Term<'a>]) -> bool {
-    args[0] == args[1]
+#[rustler::nif]
+pub fn term_debug(term: Term) -> String {
+    let mut bytes: Vec<u8> = Vec::new();
+    write!(&mut bytes, "{:?}", term).expect("debug formatting should succeed");
+    String::from_utf8_lossy(&bytes).to_string()
 }
-pub fn term_cmp<'a>(_env: Env<'a>, args: &[Term<'a>]) -> Atom {
-    match Ord::cmp(&args[0], &args[1]) {
+
+#[rustler::nif]
+pub fn term_eq<'a>(a: Term<'a>, b: Term<'a>) -> bool {
+    a == b
+}
+
+#[rustler::nif]
+pub fn term_cmp<'a>(a: Term<'a>, b: Term<'a>) -> Atom {
+    match Ord::cmp(&a, &b) {
         Ordering::Equal => atoms::equal(),
         Ordering::Less => atoms::less(),
         Ordering::Greater => atoms::greater(),

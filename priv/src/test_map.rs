@@ -1,22 +1,17 @@
-use rustler::{Env, Term, Encoder, NifResult};
 use rustler::types::map::MapIterator;
 use rustler::types::tuple::make_tuple;
+use rustler::{Encoder, Env, NifResult, Term};
 
-pub fn sum_map_values<'a>(_env: Env<'a>, args: &[Term<'a>]) -> NifResult<i64> {
-    let iter: MapIterator = args[0].decode()?;
-
-    let res: NifResult<Vec<i64>> = iter
-        .map(|(_key, value)| value.decode::<i64>())
-        .collect();
+#[rustler::nif]
+pub fn sum_map_values(iter: MapIterator) -> NifResult<i64> {
+    let res: NifResult<Vec<i64>> = iter.map(|(_key, value)| value.decode::<i64>()).collect();
 
     let nums = res?;
-    let total: i64 = nums.into_iter().sum();
-    Ok(total)
+    Ok(nums.into_iter().sum())
 }
 
-pub fn map_entries_sorted<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let iter: MapIterator = args[0].decode()?;
-
+#[rustler::nif]
+pub fn map_entries_sorted<'a>(env: Env<'a>, iter: MapIterator<'a>) -> NifResult<Vec<Term<'a>>> {
     let mut vec = vec![];
     for (key, value) in iter {
         let key_string = key.decode::<String>()?;
@@ -24,16 +19,18 @@ pub fn map_entries_sorted<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term
     }
 
     vec.sort_by_key(|pair| pair.0.clone());
-    let erlang_pairs: Vec<Term> =
-        vec.into_iter()
+    let erlang_pairs: Vec<Term> = vec
+        .into_iter()
         .map(|(key, value)| make_tuple(env, &[key.encode(env), value]))
         .collect();
-    Ok(erlang_pairs.encode(env))
+    Ok(erlang_pairs)
 }
 
-pub fn map_from_arrays<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let keys: Vec<Term> = args[0].decode()?;
-    let values: Vec<Term> = args[1].decode()?;
-
+#[rustler::nif]
+pub fn map_from_arrays<'a>(
+    env: Env<'a>,
+    keys: Vec<Term<'a>>,
+    values: Vec<Term<'a>>,
+) -> NifResult<Term<'a>> {
     Term::map_from_arrays(env, &keys, &values)
 }

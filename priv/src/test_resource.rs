@@ -1,62 +1,53 @@
-use rustler::Encoder;
-use rustler::{Env, Term, NifResult};
-use rustler::resource::ResourceArc;
+use rustler::{Env, ResourceArc};
 use std::sync::RwLock;
 
-struct TestResource {
+pub struct TestResource {
     test_field: RwLock<i32>,
 }
 
 /// This one is designed to look more like pointer data, to increase the
 /// chance of segfaults if the implementation is wrong.
-struct ImmutableResource {
+pub struct ImmutableResource {
     a: u32,
-    b: u32
+    b: u32,
 }
 
-pub fn on_load<'a>(env: Env<'a>) -> bool {
-    rustler::resource_struct_init!(TestResource, env);
-    rustler::resource_struct_init!(ImmutableResource, env);
+pub fn on_load(env: Env) -> bool {
+    rustler::resource!(TestResource, env);
+    rustler::resource!(ImmutableResource, env);
     true
 }
 
-pub fn resource_make<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let data = TestResource {
+#[rustler::nif]
+pub fn resource_make() -> ResourceArc<TestResource> {
+    ResourceArc::new(TestResource {
         test_field: RwLock::new(0),
-    };
-    let resource = ResourceArc::new(data);
-
-    Ok(resource.encode(env))
+    })
 }
 
-pub fn resource_set_integer_field<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TestResource> = args[0].decode()?;
+#[rustler::nif]
+pub fn resource_set_integer_field(resource: ResourceArc<TestResource>, n: i32) -> &'static str {
     let mut test_field = resource.test_field.write().unwrap();
-    *test_field = args[1].decode()?;
+    *test_field = n;
 
-    Ok("ok".encode(env))
+    "ok"
 }
 
-pub fn resource_get_integer_field<'a>(env: Env<'a>, args: &[Term<'a>]) ->  NifResult<Term<'a>> {
-    let resource: ResourceArc<TestResource> = args[0].decode()?;
-    let test_field = resource.test_field.read().unwrap();
-    Ok(test_field.encode(env))
+#[rustler::nif]
+pub fn resource_get_integer_field(resource: ResourceArc<TestResource>) -> i32 {
+    *resource.test_field.read().unwrap()
 }
 
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-use std::sync::atomic::{ AtomicUsize, Ordering };
-
-::lazy_static::lazy_static! {
+lazy_static::lazy_static! {
     static ref COUNT: AtomicUsize = AtomicUsize::new(0);
 }
 
 impl ImmutableResource {
     fn new(u: u32) -> ImmutableResource {
         COUNT.fetch_add(1, Ordering::SeqCst);
-        ImmutableResource {
-            a: u,
-            b: !u
-        }
+        ImmutableResource { a: u, b: !u }
     }
 }
 
@@ -68,13 +59,13 @@ impl Drop for ImmutableResource {
     }
 }
 
-pub fn resource_make_immutable<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let u: u32 = args[0].decode()?;
-    Ok(ResourceArc::new(ImmutableResource::new(u)).encode(env))
+#[rustler::nif]
+pub fn resource_make_immutable(u: u32) -> ResourceArc<ImmutableResource> {
+    ResourceArc::new(ImmutableResource::new(u))
 }
 
-/// Count how many instances of `ImmutableResource` are currently alive globally.
-pub fn resource_immutable_count<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let n = COUNT.load(Ordering::SeqCst) as u32;
-    Ok(n.encode(env))
+// Count how many instances of `ImmutableResource` are currently alive globally.
+#[rustler::nif]
+pub fn resource_immutable_count() -> u32 {
+    COUNT.load(Ordering::SeqCst) as u32
 }
