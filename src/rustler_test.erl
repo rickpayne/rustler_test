@@ -32,7 +32,7 @@
 -on_load(init/0).
 
 init() ->
-    ok = erlang:load_nif("priv/librustler_test", 0).
+    ok = erlang:load_nif(code:priv_dir(rustler_test) ++ "/librustler_test", 0).
 
 %% test_primatives.rs
 add_u32(_,_) -> exit(nif_library_not_loaded).
