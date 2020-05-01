@@ -27,6 +27,8 @@
         , raise_term_with_atom_error/0, term_with_tuple_error/0]).
 -export([nif_attrs_can_rename/0]).
 
+-export([prefix_echo/1]).
+
 -on_load(init/0).
 
 init() ->
@@ -96,6 +98,8 @@ newtype_echo(_) -> exit(nif_library_not_loaded).
 tuplestruct_echo(_) -> exit(nif_library_not_loaded).
 newtype_record_echo(_) -> exit(nif_library_not_loaded).
 tuplestruct_record_echo(_) -> exit(nif_library_not_loaded).
+
+prefix_echo(_) -> exit(nif_library_not_loaded).     
 
 %% dirty.rs
 dirty_cpu() -> exit(nif_library_not_loaded).
