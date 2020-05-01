@@ -1,5 +1,7 @@
 -module(rustler_test).
 
+-include("crates.hrl").
+
 -export([add_u32/2, add_i32/2, echo_u8/1, option_inc/1, result_to_int/1]).
 -export([sum_list/1, make_list/0]).
 -export([term_debug/1, term_eq/2, term_cmp/2]).
@@ -32,7 +34,7 @@
 -on_load(init/0).
 
 init() ->
-    ok = erlang:load_nif(code:priv_dir(rustler_test) ++ "/librustler_test", 0).
+    ok = ?load_nif_from_crate(rustler_test, ?crate_rustler_test, 0).
 
 %% test_primatives.rs
 add_u32(_,_) -> exit(nif_library_not_loaded).

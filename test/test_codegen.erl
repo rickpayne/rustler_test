@@ -31,8 +31,8 @@ map_echo_test() ->
                      rustler_test:map_echo(#{lhs => 1, mid => 17})).
 
 struct_echo_test() ->
-    ?assertEqual(#{'__struct__' => "AddStruct", lhs => 1, rhs => 2},
-                 rustler_test:struct_echo(#{'__struct__' => "AddStruct", lhs => 1, rhs => 2})).
+    ?assertEqual(#{'__struct__' => 'Elixir.AddStruct', lhs => 1, rhs => 2},
+                 rustler_test:struct_echo(#{'__struct__' => 'Elixir.AddStruct', lhs => 1, rhs => 2})).
 
 unit_enum_echo_test() ->
     ?assertEqual(foo_bar, rustler_test:unit_enum_echo(foo_bar)),
